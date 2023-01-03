@@ -8,7 +8,7 @@
 import re
 from urllib.parse import urlencode, urlparse, parse_qs
 from lxml import html
-from searx.utils import eval_xpath, extract_text, eval_xpath_list, match_language
+from searx.utils import eval_xpath, extract_text, eval_xpath_list, match_language, strip_wrappedtext
 from searx.network import multi_requests, Request
 
 about = {
@@ -74,7 +74,6 @@ def request(query, params):
 
 
 def response(resp):
-
     results = []
     result_len = 0
 
@@ -84,12 +83,19 @@ def response(resp):
 
     url_to_resolve = []
     url_to_resolve_index = []
-    for i, result in enumerate(eval_xpath_list(dom, '//li[@class="b_algo"]')):
+    for i, result in enumerate(eval_xpath_list(dom, '//li[contains(@class, "b_algo")]')):
 
         link = eval_xpath(result, './/h2/a')[0]
         url = link.attrib.get('href')
         title = extract_text(link)
-        content = extract_text(eval_xpath(result, './/p'))
+        # Make sure that the element is free of <a href> links and <span class='algoSlug_icon'>
+        content_xpath = eval_xpath(result, '(.//p)[1]')
+        try:
+            strip_wrappedtext(content_xpath[0], './/a')
+            strip_wrappedtext(content_xpath[0], './/span[@class="algoSlug_icon"]')
+        except IndexError:
+            pass
+        content = extract_text(content_xpath)
 
         # get the real URL either using the URL shown to user or following the Bing URL
         if url.startswith('https://www.bing.com/ck/a?'):
