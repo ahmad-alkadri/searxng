@@ -157,23 +157,6 @@ def html_to_text(html_str: str) -> str:
     return s.get_text()
 
 
-def strip_wrappedtext(elem, xpath: str = './/a') -> None:
-    """Given an lxml.html.HtmlElement, remove the text wrapped
-    inside certain elements, represented by the xpath. For example, if
-    we have a `<p></p>` element, and inside it there is a text wrapped
-    by a `<a></a>` element, by putting xpath arg equals to './/a',
-    this function will remove that wrapped text.
-
-    Args:
-        * elem: an lxml.html.HtmlElement containing the text.
-        * xpath (str, optional): the xpath of the wrapper. Defaults to './/a'.
-    """
-    x_elements = elem.xpath(xpath)
-    if len(x_elements) > 0:
-        for x_element in x_elements:
-            x_element.text = ''
-
-
 def extract_text(xpath_results, allow_none: bool = False) -> Optional[str]:
     """Extract text from a lxml result
 

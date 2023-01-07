@@ -4,11 +4,12 @@
 
 - https://github.com/searx/searx/issues/2019#issuecomment-648227442
 """
+# pylint: disable=too-many-branches
 
 import re
 from urllib.parse import urlencode, urlparse, parse_qs
 from lxml import html
-from searx.utils import eval_xpath, extract_text, eval_xpath_list, match_language, strip_wrappedtext
+from searx.utils import eval_xpath, extract_text, eval_xpath_list, match_language
 from searx.network import multi_requests, Request
 
 about = {
@@ -88,14 +89,15 @@ def response(resp):
         link = eval_xpath(result, './/h2/a')[0]
         url = link.attrib.get('href')
         title = extract_text(link)
+
         # Make sure that the element is free of <a href> links and <span class='algoSlug_icon'>
-        content_xpath = eval_xpath(result, '(.//p)[1]')
-        try:
-            strip_wrappedtext(content_xpath[0], './/a')
-            strip_wrappedtext(content_xpath[0], './/span[@class="algoSlug_icon"]')
-        except IndexError:
-            pass
-        content = extract_text(content_xpath)
+        content = eval_xpath(result, '(.//p)[1]')
+        for p in content:
+            for e in p.xpath('.//a'):
+                e.getparent().remove(e)
+            for e in p.xpath('.//span[@class="algoSlug_icon"]'):
+                e.getparent().remove(e)
+        content = extract_text(content)
 
         # get the real URL either using the URL shown to user or following the Bing URL
         if url.startswith('https://www.bing.com/ck/a?'):
