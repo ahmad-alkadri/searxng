@@ -86,39 +86,40 @@ def response(resp):
     url_to_resolve_index = []
     for i, result in enumerate(eval_xpath_list(dom, '//li[contains(@class, "b_algo")]')):
 
-        link = eval_xpath(result, './/h2/a')[0]
-        url = link.attrib.get('href')
-        title = extract_text(link)
+        if len(eval_xpath(result, './/h2/a')) > 0:
+            link = eval_xpath(result, './/h2/a')[0]
+            url = link.attrib.get('href')
+            title = extract_text(link)
 
-        # Make sure that the element is free of <a href> links and <span class='algoSlug_icon'>
-        content = eval_xpath(result, '(.//p)[1]')
-        for p in content:
-            for e in p.xpath('.//a'):
-                e.getparent().remove(e)
-            for e in p.xpath('.//span[@class="algoSlug_icon"]'):
-                e.getparent().remove(e)
-        content = extract_text(content)
+            # Make sure that the element is free of <a href> links and <span class='algoSlug_icon'>
+            content = eval_xpath(result, '(.//p)[1]')
+            for p in content:
+                for e in p.xpath('.//a'):
+                    e.getparent().remove(e)
+                for e in p.xpath('.//span[@class="algoSlug_icon"]'):
+                    e.getparent().remove(e)
+            content = extract_text(content)
 
-        # get the real URL either using the URL shown to user or following the Bing URL
-        if url.startswith('https://www.bing.com/ck/a?'):
-            url_cite = extract_text(eval_xpath(result, './/div[@class="b_attribution"]/cite'))
-            # Bing can shorten the URL either at the end or in the middle of the string
-            if (
-                url_cite.startswith('https://')
-                and '…' not in url_cite
-                and '...' not in url_cite
-                and '›' not in url_cite
-            ):
-                # no need for an additional HTTP request
-                url = url_cite
-            else:
-                # resolve the URL with an additional HTTP request
-                url_to_resolve.append(url.replace('&ntb=1', '&ntb=F'))
-                url_to_resolve_index.append(i)
-                url = None  # remove the result if the HTTP Bing redirect raise an exception
+            # get the real URL either using the URL shown to user or following the Bing URL
+            if url.startswith('https://www.bing.com/ck/a?'):
+                url_cite = extract_text(eval_xpath(result, './/div[@class="b_attribution"]/cite'))
+                # Bing can shorten the URL either at the end or in the middle of the string
+                if (
+                    url_cite.startswith('https://')
+                    and '…' not in url_cite
+                    and '...' not in url_cite
+                    and '›' not in url_cite
+                ):
+                    # no need for an additional HTTP request
+                    url = url_cite
+                else:
+                    # resolve the URL with an additional HTTP request
+                    url_to_resolve.append(url.replace('&ntb=1', '&ntb=F'))
+                    url_to_resolve_index.append(i)
+                    url = None  # remove the result if the HTTP Bing redirect raise an exception
 
-        # append result
-        results.append({'url': url, 'title': title, 'content': content})
+            # append result
+            results.append({'url': url, 'title': title, 'content': content})
 
     # resolve all Bing redirections in parallel
     request_list = [
